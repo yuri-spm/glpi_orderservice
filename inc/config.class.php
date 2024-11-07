@@ -18,4 +18,12 @@ class PluginOrderserviceConfig extends CommonDBTM
 
     }
 
+    public function getTabNameForItem(CommonGLPI $item, $withtemplate = 0)
+    {
+        switch(get_class($item)){
+            case 'Ticket':
+                return array(1 => ('Ordem de Serviço'));
+                default:
+        }
+    }
 }
