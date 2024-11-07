@@ -1,0 +1,7 @@
+dist/
+node_modules/
+vendor/
+.gh_token
+composer.lock
+*.min.*
+
