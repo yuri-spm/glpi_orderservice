@@ -178,7 +178,7 @@ class PluginOrderserviceConfig extends CommonDBTM
             echo '                <tr>';
             echo '                    <td>NTB03</td>';
             echo '                    <td>Notebook</td>';
-            echo '                    <td>541564894984</td>';
+            echo '                    <td>8489454654</td>';
             echo '                </tr>';
             echo '            </tbody>';
             echo '        </table>';
