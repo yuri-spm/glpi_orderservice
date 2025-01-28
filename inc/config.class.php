@@ -1,5 +1,7 @@
 <?php
 
+use Dompdf\Dompdf;
+
 class PluginOrderserviceConfig extends CommonDBTM
 {
     static protected $notable = true;
@@ -47,6 +49,8 @@ class PluginOrderserviceConfig extends CommonDBTM
     static function template()
     {
         $itens = true;
+
+        $options = [];
 
         echo '<!DOCTYPE html>';
         echo '<html lang="pt-br">';
@@ -206,7 +210,36 @@ class PluginOrderserviceConfig extends CommonDBTM
         echo '    </div>';
         echo '</div>';
         echo '</body>';
-        echo '</html>';
+        echo '</html><br>';
+
+        echo "<button type='button' class='btn btn-primary' onclick='generatePDF()'>Gerar PDF</button>";
+        echo "<script>
+            function generatePDF() {
+                window.location.href = '../plugins/orderservice/ajax/config.ajax.php';
+            }
+        </script>";
+
+        
+    }
+
+
+    public static function generatePDF() {
+        $options = new Options();
+        $options->set('isHtml5ParserEnabled', true);
+        $options->set('isRemoteEnabled', true);
+        
+        $dompdf = new Dompdf($options);
+        
+        ob_start();
+        self::template();
+        $html = ob_get_clean();
+        
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+        
+        return $dompdf->output();
     }
 
 }
+
