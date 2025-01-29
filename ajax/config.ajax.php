@@ -24,6 +24,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $dompdf->setPaper('A4', 'portrait');
     $dompdf->render();
     
-    echo $dompdf->output();
+    echo $dompdf->stream("document.pdf", ["Attachment" => false]);;
     exit;
 }

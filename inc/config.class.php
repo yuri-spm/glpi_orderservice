@@ -45,13 +45,20 @@ class PluginOrderserviceConfig extends CommonDBTM
         $instance->template();
     }
 
+    static function template($ticket_id = null) {
+        if ($ticket_id === null) {
+            $ticket_id = $_REQUEST['id'] ?? null;
+        }
+        
+        if (!$ticket_id) {
+            return false;
+        }
 
-    static function template()
-    {
-        $itens = true;
-
-        $options = [];
-
+        $dados = self::getTicketData($ticket_id);
+        
+        if (!$dados) {
+            return false;
+        }
         echo '<!DOCTYPE html>';
         echo '<html lang="pt-br">';
         echo '<head>';
@@ -132,37 +139,37 @@ class PluginOrderserviceConfig extends CommonDBTM
         echo '    <table class="header-table">';
         echo '        <tr>';
         echo '            <th>Número do Chamado:</th>';
-        echo '            <td>123456</td>';
+        echo '            <td>' . $dados['numero_chamado'] . '</td>';
         echo '            <th>Data de Abertura:</th>';
-        echo '            <td>07/11/2024</td>';
+        echo '            <td>' . $dados['data_abertura'] . '</td>';
         echo '        </tr>';
         echo '        <tr>';
         echo '            <th>Solicitante:</th>';
-        echo '            <td>Nome do Solicitante</td>';
+        echo '            <td>' . $dados['solicitante'] . '</td>';
         echo '            <th>Departamento:</th>';
-        echo '            <td>TI</td>';
+        echo '            <td>' . $dados['departamento'] . '</td>';
         echo '        </tr>';
         echo '    </table>';
         
         echo '    <div class="section">';
         echo '        <h2>Detalhes do Chamado</h2>';
         echo '        <div><label>Descrição do Problema:</label></div>';
-        echo '        <div>Descrição breve do problema relatado pelo usuário.</div>';
+        echo '        <div>' . nl2br($dados['descricao']) . '</div>';
         echo '    </div>';
         
         echo '    <div class="section">';
         echo '        <h2>Dados do Técnico</h2>';
-        echo '        <div><strong>Técnico Responsável:</strong> Nome do Técnico</div>';
-        echo '        <div><strong>Data de Início:</strong> 07/11/2024</div>';
-        echo '        <div><strong>Data de Conclusão:</strong> 08/11/2024</div>';
+        echo '        <div><strong>Técnico Responsável:</strong> ' . $dados['tecnico'] . '</div>';
+        echo '        <div><strong>Data de Início:</strong> ' . $dados['data_inicio'] . '</div>';
+        echo '        <div><strong>Data de Conclusão:</strong> ' . $dados['data_conclusao'] . '</div>';
         echo '    </div>';
         
         echo '    <div class="section">';
         echo '        <h2>Ações Realizadas</h2>';
-        echo '        <div>Descrição das ações tomadas para resolver o problema.</div>';
+        echo '        <div>' . nl2br($dados['solucao']) . '</div>';
         echo '    </div>';
         
-        if($itens){
+        if (!empty($dados['itens'])) {
             echo '    <div class="section">';
             echo '        <h2>Perifericos</h2>';
             echo '        <table class="material-table">';
@@ -174,16 +181,15 @@ class PluginOrderserviceConfig extends CommonDBTM
             echo '                </tr>';
             echo '            </thead>';
             echo '            <tbody>';
-            echo '                <tr>';
-            echo '                    <td>PC01</td>';
-            echo '                    <td>Computador</td>';
-            echo '                    <td>878484515</td>';
-            echo '                </tr>';
-            echo '                <tr>';
-            echo '                    <td>NTB03</td>';
-            echo '                    <td>Notebook</td>';
-            echo '                    <td>8489454654</td>';
-            echo '                </tr>';
+            
+            foreach ($dados['itens'] as $item) {
+                echo '                <tr>';
+                echo '                    <td>' . $item['name'] . '</td>';
+                echo '                    <td>' . $item['type'] . '</td>';
+                echo '                    <td>' . $item['serial'] . '</td>';
+                echo '                </tr>';
+            }
+            
             echo '            </tbody>';
             echo '        </table>';
             echo '    </div>';
@@ -210,36 +216,85 @@ class PluginOrderserviceConfig extends CommonDBTM
         echo '    </div>';
         echo '</div>';
         echo '</body>';
-        echo '</html><br>';
+        $html = '</html><br>';
 
-        echo "<button type='button' class='btn btn-primary' onclick='generatePDF()'>Gerar PDF</button>";
+        if (defined('GENERATING_PDF')) {
+            return $html;
+        }
+
+
+        echo "<div style='text-align: center; margin-top: 20px;'>
+                <button type='button' class='btn btn-primary' onclick='generatePDF()'>Gerar PDF</button>
+             </div>";
         echo "<script>
-            function generatePDF() {
-                window.location.href = '../plugins/orderservice/ajax/config.ajax.php';
+                function generatePDF() {
+                    window.location.href = '../plugins/orderservice/ajax/config.ajax.php';
+                }
+            </script>"; 
+    }
+
+    
+    static function getTicketData($ticket_id) {
+        global $DB;
+        
+        $ticket = new Ticket();
+        if (!$ticket->getFromDB($ticket_id)) {
+            return false;
+        }
+        
+        $user = new User();
+        $user->getFromDB($ticket->fields['users_id_recipient']);
+        
+
+        $grupo_usuario = new Group_User();
+        $grupos = $grupo_usuario->find(['users_id' => $ticket->fields['users_id_recipient']]);
+        $departamento = '';
+        
+        foreach ($grupos as $grupo) {
+            $group = new Group();
+            if ($group->getFromDB($grupo['groups_id'])) {
+                $departamento = $group->fields['name'];
+                break;
             }
-        </script>";
-
+        }
         
+        $tech = new User();
+        $tech->getFromDB($ticket->fields['users_id_lastupdater']);
+        
+        $solution = new ITILSolution();
+        $solucao = $solution->find(['items_id' => $ticket_id, 'itemtype' => 'Ticket'], ['date_creation DESC']);
+        $ultima_solucao = reset($solucao);
+        
+        $item_ticket = new Item_Ticket();
+        $items = $item_ticket->find(['tickets_id' => $ticket_id]);
+        
+        $itens_info = [];
+        foreach ($items as $item) {
+            $itemtype = $item['itemtype'];
+            $item_obj = new $itemtype();
+            
+            if ($item_obj->getFromDB($item['items_id'])) {
+                $itens_info[] = [
+                    'name' => $item_obj->fields['name'],
+                    'type' => $itemtype,
+                    'serial' => isset($item_obj->fields['serial']) ? $item_obj->fields['serial'] : ''
+                ];
+            }
+        }
+        
+        return [
+            'numero_chamado' => $ticket->fields['id'],
+            'data_abertura' => date('d/m/Y', strtotime($ticket->fields['date'])),
+            'solicitante' => $user->fields['firstname'] . ' ' . $user->fields['realname'],
+            'departamento' => $departamento,
+            'descricao' => $ticket->fields['content'],
+            'tecnico' => $tech->fields['realname'] . ' ' . $tech->fields['firstname'],
+            'data_inicio' => date('d/m/Y', strtotime($ticket->fields['date'])),
+            'data_conclusao' => $ultima_solucao ? date('d/m/Y', strtotime($ultima_solucao['date_creation'])) : '',
+            'solucao' => $ultima_solucao ? $ultima_solucao['content'] : '',
+            'itens' => $itens_info
+        ];
     }
-
-
-    public static function generatePDF() {
-        $options = new Options();
-        $options->set('isHtml5ParserEnabled', true);
-        $options->set('isRemoteEnabled', true);
         
-        $dompdf = new Dompdf($options);
-        
-        ob_start();
-        self::template();
-        $html = ob_get_clean();
-        
-        $dompdf->loadHtml($html);
-        $dompdf->setPaper('A4', 'portrait');
-        $dompdf->render();
-        
-        return $dompdf->output();
-    }
-
 }
 
