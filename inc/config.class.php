@@ -1,6 +1,7 @@
 <?php
 
 use Dompdf\Dompdf;
+use Glpi\Toolbox\Sanitizer;
 
 class PluginOrderserviceConfig extends CommonDBTM
 {
@@ -49,16 +50,19 @@ class PluginOrderserviceConfig extends CommonDBTM
         if ($ticket_id === null) {
             $ticket_id = $_REQUEST['id'] ?? null;
         }
-        
+    
         if (!$ticket_id) {
             return false;
         }
-
+    
         $dados = self::getTicketData($ticket_id);
-        
+    
         if (!$dados) {
             return false;
         }
+    
+
+        ob_start();
         echo '<!DOCTYPE html>';
         echo '<html lang="pt-br">';
         echo '<head>';
@@ -136,6 +140,7 @@ class PluginOrderserviceConfig extends CommonDBTM
         echo '<div class="container">';
         echo '    <h1>Ordem de Serviço</h1>';
         
+        // Dados do ticket
         echo '    <table class="header-table">';
         echo '        <tr>';
         echo '            <th>Número do Chamado:</th>';
@@ -153,10 +158,11 @@ class PluginOrderserviceConfig extends CommonDBTM
         
         echo '    <div class="section">';
         echo '        <h2>Detalhes do Chamado</h2>';
-        echo '        <div><label>Descrição do Problema:</label></div>';
-        echo '        <div>' . nl2br($dados['descricao']) . '</div>';
+        //echo '        <div><label>Descrição do Problema:</label></div>';
+        echo '        <div>' . htmlspecialchars_decode($dados['descricao']) . '</div>';
         echo '    </div>';
         
+        // Dados do técnico
         echo '    <div class="section">';
         echo '        <h2>Dados do Técnico</h2>';
         echo '        <div><strong>Técnico Responsável:</strong> ' . $dados['tecnico'] . '</div>';
@@ -164,20 +170,22 @@ class PluginOrderserviceConfig extends CommonDBTM
         echo '        <div><strong>Data de Conclusão:</strong> ' . $dados['data_conclusao'] . '</div>';
         echo '    </div>';
         
+        // Ações realizadas
         echo '    <div class="section">';
         echo '        <h2>Ações Realizadas</h2>';
-        echo '        <div>' . nl2br($dados['solucao']) . '</div>';
+        echo '        <div>' . htmlspecialchars_decode($dados['solucao']) . '</div>';
         echo '    </div>';
         
+        // Itens relacionados
         if (!empty($dados['itens'])) {
             echo '    <div class="section">';
-            echo '        <h2>Perifericos</h2>';
+            echo '        <h2>Itens Relacionados</h2>';
             echo '        <table class="material-table">';
             echo '            <thead>';
             echo '                <tr>';
             echo '                    <th>Nome</th>';
-            echo '                    <th>Item</th>';
-            echo '                    <th>Número de Serie</th>';
+            echo '                    <th>Tipo</th>';
+            echo '                    <th>Número de Série</th>';
             echo '                </tr>';
             echo '            </thead>';
             echo '            <tbody>';
@@ -195,6 +203,7 @@ class PluginOrderserviceConfig extends CommonDBTM
             echo '    </div>';
         }
         
+        // Assinaturas
         echo '    <div class="section">';
         echo '        <h2>Assinaturas</h2>';
         echo '        <table class="signature-table">';
@@ -211,26 +220,27 @@ class PluginOrderserviceConfig extends CommonDBTM
         echo '        </table>';
         echo '    </div>';
         
-        echo '    <div class="footer">';
-        echo '        <p id="center">Ordem de Serviço gerada pelo sistema. Todos os direitos reservados.</p>';
-        echo '    </div>';
         echo '</div>';
         echo '</body>';
-        $html = '</html><br>';
+        echo '</html>';
+        $html = ob_get_clean();
+    
 
         if (defined('GENERATING_PDF')) {
             return $html;
         }
-
-
+    
+        echo $html;
+    
+        // Gerar o PDF
         echo "<div style='text-align: center; margin-top: 20px;'>
                 <button type='button' class='btn btn-primary' onclick='generatePDF()'>Gerar PDF</button>
-             </div>";
+              </div>";
         echo "<script>
                 function generatePDF() {
-                    window.location.href = '../plugins/orderservice/ajax/config.ajax.php';
+                    window.location.href = '../plugins/orderservice/ajax/config.ajax.php?id=" . $ticket_id . "';
                 }
-            </script>"; 
+              </script>";
     }
 
     
@@ -287,7 +297,7 @@ class PluginOrderserviceConfig extends CommonDBTM
             'data_abertura' => date('d/m/Y', strtotime($ticket->fields['date'])),
             'solicitante' => $user->fields['firstname'] . ' ' . $user->fields['realname'],
             'departamento' => $departamento,
-            'descricao' => $ticket->fields['content'],
+            'descricao' => ($ticket->fields['content']),
             'tecnico' => $tech->fields['realname'] . ' ' . $tech->fields['firstname'],
             'data_inicio' => date('d/m/Y', strtotime($ticket->fields['date'])),
             'data_conclusao' => $ultima_solucao ? date('d/m/Y', strtotime($ultima_solucao['date_creation'])) : '',
