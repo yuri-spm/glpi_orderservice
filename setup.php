@@ -29,7 +29,7 @@
  * --------------------------------------------------------------------------
  */
 
-define('PLUGIN_ORDERSERVICE_VERSION', '0.0.1');
+define('PLUGIN_ORDERSERVICE_VERSION', '1.0.0');
 
 // Minimal GLPI version, inclusive
 define("PLUGIN_ORDERSERVICE_MIN_GLPI_VERSION", "10.0.0");
