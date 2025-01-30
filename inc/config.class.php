@@ -46,204 +46,201 @@ class PluginOrderserviceConfig extends CommonDBTM
         $instance->template();
     }
 
-    static function template($ticket_id = null) {
+    static function template($ticket_id = null) 
+    {
+        // Se não recebeu ticket_id como parâmetro, tenta pegar da requisição
         if ($ticket_id === null) {
             $ticket_id = $_REQUEST['id'] ?? null;
         }
-    
+        
         if (!$ticket_id) {
             return false;
         }
     
         $dados = self::getTicketData($ticket_id);
-    
+        
         if (!$dados) {
             return false;
         }
     
-
-        ob_start();
-        echo '<!DOCTYPE html>';
-        echo '<html lang="pt-br">';
-        echo '<head>';
-        echo '    <meta charset="UTF-8">';
-        echo '    <title>Ordem de Serviço</title>';
-        echo '    <style>';
-        echo '        /* Configuração da página para impressão em A4 */';
-        echo '        @page {';
-        echo '            size: A4;';
-        echo '            margin: 20mm;';
-        echo '        }';
-        echo '        body {';
-        echo '            font-family: Arial, sans-serif;';
-        echo '            margin: 0;';
-        echo '            padding: 0;';
-        echo '            color: #333;';
-        echo '        }';
-        echo '        .container {';
-        echo '            width: 100%;';
-        echo '            max-width: 800px;';
-        echo '            margin: auto;';
-        echo '            padding: 20px;';
-        echo '            border: 1px solid #000;';
-        echo '        }';
-        echo '        h1 {';
-        echo '            text-align: center;';
-        echo '            font-size: 24px;';
-        echo '            margin-bottom: 20px;';
-        echo '        }';
-        echo '        .header-table, .signature-table, .material-table {';
-        echo '            width: 100%;';
-        echo '            border-collapse: collapse;';
-        echo '            margin-bottom: 20px;';
-        echo '        }';
-        echo '        .header-table th, .header-table td, .material-table th, .material-table td, .signature-table td {';
-        echo '            padding: 10px;';
-        echo '            border: 1px solid #333;';
-        echo '            text-align: left;';
-        echo '        }';
-        echo '        .header-table th {';
-        echo '            background-color: #f2f2f2;';
-        echo '            font-weight: bold;';
-        echo '        }';
-        echo '        .signature-table {';
-        echo '            margin-top: 30px;';
-        echo '        }';
-        echo '        .signature-table td {';
-        echo '            text-align: center;';
-        echo '            padding-top: 20px;';
-        echo '        }';
-        echo '        .signature-line {';
-        echo '            display: block;';
-        echo '            margin-bottom: 5px;';
-        echo '            border-bottom: 1px solid #000;';
-        echo '            width: 80%;';
-        echo '            height: 1px;';
-        echo '            margin-left: auto;';
-        echo '            margin-right: auto;';
-        echo '        }';
-        echo '        .section {';
-        echo '            margin-bottom: 20px;';
-        echo '        }';
-        echo '        .section h2 {';
-        echo '            font-size: 18px;';
-        echo '            margin-bottom: 10px;';
-        echo '            border-bottom: 1px solid #333;';
-        echo '            padding-bottom: 5px;';
-        echo '        }';
-        echo '        #center {';
-        echo '            text-align: center;';
-        echo '        }';
-        echo '    </style>';
-        echo '</head>';
-        echo '<body>';
-        echo '<div class="container">';
-        echo '    <h1>Ordem de Serviço</h1>';
-        
-        // Dados do ticket
-        echo '    <table class="header-table">';
-        echo '        <tr>';
-        echo '            <th>Número do Chamado:</th>';
-        echo '            <td>' . $dados['numero_chamado'] . '</td>';
-        echo '            <th>Data de Abertura:</th>';
-        echo '            <td>' . $dados['data_abertura'] . '</td>';
-        echo '        </tr>';
-        echo '        <tr>';
-        echo '            <th>Solicitante:</th>';
-        echo '            <td>' . $dados['solicitante'] . '</td>';
-        echo '            <th>Departamento:</th>';
-        echo '            <td>' . $dados['departamento'] . '</td>';
-        echo '        </tr>';
-        echo '    </table>';
-        
-        echo '    <div class="section">';
-        echo '        <h2>Detalhes do Chamado</h2>';
-        //echo '        <div><label>Descrição do Problema:</label></div>';
-        echo '        <div>' . htmlspecialchars_decode($dados['descricao']) . '</div>';
-        echo '    </div>';
-        
-        // Dados do técnico
-        echo '    <div class="section">';
-        echo '        <h2>Dados do Técnico</h2>';
-        echo '        <div><strong>Técnico Responsável:</strong> ' . $dados['tecnico'] . '</div>';
-        echo '        <div><strong>Data de Início:</strong> ' . $dados['data_inicio'] . '</div>';
-        echo '        <div><strong>Data de Conclusão:</strong> ' . $dados['data_conclusao'] . '</div>';
-        echo '    </div>';
-        
-        // Ações realizadas
-        echo '    <div class="section">';
-        echo '        <h2>Ações Realizadas</h2>';
-        echo '        <div>' . htmlspecialchars_decode($dados['solucao']) . '</div>';
-        echo '    </div>';
-        
-        // Itens relacionados
-        if (!empty($dados['itens'])) {
-            echo '    <div class="section">';
-            echo '        <h2>Itens Relacionados</h2>';
-            echo '        <table class="material-table">';
-            echo '            <thead>';
-            echo '                <tr>';
-            echo '                    <th>Nome</th>';
-            echo '                    <th>Tipo</th>';
-            echo '                    <th>Número de Série</th>';
-            echo '                </tr>';
-            echo '            </thead>';
-            echo '            <tbody>';
+        $html = '<!DOCTYPE html>
+        <html lang="pt-br">
+        <head>
+            <meta charset="UTF-8">
+            <title>Ordem de Serviço</title>
+            <style>
+                @page {
+                    size: A4;
+                    margin: 20mm;
+                }
+                body {
+                    font-family: Arial, sans-serif;
+                    margin: 0;
+                    padding: 0;
+                    color: #333;
+                }
+                .container {
+                    width: 100%;
+                    max-width: 800px;
+                    margin: auto;
+                    padding: 20px;
+                    border: 1px solid #000;
+                }
+                h1 {
+                    text-align: center;
+                    font-size: 24px;
+                    margin-bottom: 20px;
+                }
+                .header-table, .signature-table, .material-table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin-bottom: 20px;
+                }
+                .header-table th, .header-table td, .material-table th, .material-table td, .signature-table td {
+                    padding: 10px;
+                    border: 1px solid #333;
+                    text-align: left;
+                }
+                .header-table th {
+                    background-color: #f2f2f2;
+                    font-weight: bold;
+                }
+                .signature-table {
+                    margin-top: 30px;
+                }
+                .signature-table td {
+                    text-align: center;
+                    padding-top: 20px;
+                }
+                .signature-line {
+                    display: block;
+                    margin-bottom: 5px;
+                    border-bottom: 1px solid #000;
+                    width: 80%;
+                    height: 1px;
+                    margin-left: auto;
+                    margin-right: auto;
+                }
+                .section {
+                    margin-bottom: 20px;
+                }
+                .section h2 {
+                    font-size: 18px;
+                    margin-bottom: 10px;
+                    border-bottom: 1px solid #333;
+                    padding-bottom: 5px;
+                }
+                #center {
+                    text-align: center;
+                }
+            </style>
+        </head>
+        <body>
+        <div class="container">
+            <h1>Ordem de Serviço</h1>
             
-            foreach ($dados['itens'] as $item) {
-                echo '                <tr>';
-                echo '                    <td>' . $item['name'] . '</td>';
-                echo '                    <td>' . $item['type'] . '</td>';
-                echo '                    <td>' . $item['serial'] . '</td>';
-                echo '                </tr>';
-            }
+            <table class="header-table">
+                <tr>
+                    <th>Número do Chamado:</th>
+                    <td>' . $dados['numero_chamado'] . '</td>
+                    <th>Data de Abertura:</th>
+                    <td>' . $dados['data_abertura'] . '</td>
+                </tr>
+                <tr>
+                    <th>Solicitante:</th>
+                    <td>' . htmlspecialchars($dados['solicitante']) . '</td>
+                    <th>Departamento:</th>
+                    <td>' . htmlspecialchars($dados['departamento']) . '</td>
+                </tr>
+            </table>
             
-            echo '            </tbody>';
-            echo '        </table>';
-            echo '    </div>';
-        }
-        
-        // Assinaturas
-        echo '    <div class="section">';
-        echo '        <h2>Assinaturas</h2>';
-        echo '        <table class="signature-table">';
-        echo '            <tr>';
-        echo '                <td>';
-        echo '                    <span class="signature-line"></span>';
-        echo '                    Assinatura do Solicitante';
-        echo '                </td>';
-        echo '                <td>';
-        echo '                    <span class="signature-line"></span>';
-        echo '                    Assinatura do Técnico';
-        echo '                </td>';
-        echo '            </tr>';
-        echo '        </table>';
-        echo '    </div>';
-        
-        echo '</div>';
-        echo '</body>';
-        echo '</html>';
-        $html = ob_get_clean();
+            <div class="section">
+                <h2>Detalhes do Chamado</h2>
+                <div><label>Descrição do Problema:</label></div>
+                <div>' . nl2br(htmlspecialchars($dados['descricao'])) . '</div>
+            </div>
+            
+            <div class="section">
+                <h2>Dados do Técnico</h2>
+                <div><strong>Técnico Responsável:</strong> ' . htmlspecialchars($dados['tecnico']) . '</div>
+                <div><strong>Data de Início:</strong> ' . $dados['data_inicio'] . '</div>
+                <div><strong>Data de Conclusão:</strong> ' . $dados['data_conclusao'] . '</div>
+            </div>
+            
+            <div class="section">
+                <h2>Ações Realizadas</h2>
+                <div>' . nl2br(htmlspecialchars($dados['solucao'])) . '</div>
+            </div>';
     
-
+        if (!empty($dados['itens'])) {
+            $html .= '
+            <div class="section">
+                <h2>Perifericos</h2>
+                <table class="material-table">
+                    <thead>
+                        <tr>
+                            <th>Nome</th>
+                            <th>Item</th>
+                            <th>Número de Serie</th>
+                        </tr>
+                    </thead>
+                    <tbody>';
+                    
+            foreach ($dados['itens'] as $item) {
+                $html .= '
+                        <tr>
+                            <td>' . htmlspecialchars($item['name']) . '</td>
+                            <td>' . htmlspecialchars($item['type']) . '</td>
+                            <td>' . htmlspecialchars($item['serial']) . '</td>
+                        </tr>';
+            }
+                    
+            $html .= '
+                    </tbody>
+                </table>
+            </div>';
+        }
+    
+        $html .= '
+            <div class="section">
+                <h2>Assinaturas</h2>
+                <table class="signature-table">
+                    <tr>
+                        <td>
+                            <span class="signature-line"></span>
+                            Assinatura do Solicitante
+                        </td>
+                        <td>
+                            <span class="signature-line"></span>
+                            Assinatura do Técnico
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            
+            <div class="footer">
+                <p id="center">Ordem de Serviço gerada pelo sistema. Todos os direitos reservados.</p>
+            </div>
+        </div>
+        </body>
+        </html>';
+    
+        // Se estamos gerando PDF, retorna o HTML
         if (defined('GENERATING_PDF')) {
             return $html;
         }
     
+        // Se não, exibe normalmente e adiciona o botão
         echo $html;
-    
-        // Gerar o PDF
         echo "<div style='text-align: center; margin-top: 20px;'>
                 <button type='button' class='btn btn-primary' onclick='generatePDF()'>Gerar PDF</button>
-              </div>";
-        echo "<script>
-                function generatePDF() {
-                    window.location.href = '../plugins/orderservice/ajax/config.ajax.php?id=" . $ticket_id . "';
-                }
-              </script>";
+             </div>";
+             echo "<script>
+             function generatePDF() {
+                 window.location.href = CFG_GLPI.root_doc + '/plugins/orderservice/ajax/config.ajax.php?id=" . $ticket_id . "';
+             }
+         </script>";
     }
-
-    
     static function getTicketData($ticket_id) {
         global $DB;
         
