@@ -1,5 +1,7 @@
 # OrderService GLPI plugin 🚀
+Gostou do repositório, adicione uma estrela para ajudar.
 Me ajude a melhorar o projeto!! 
+
 
 ![alt text](<Imagem do WhatsApp de 2025-01-29 à(s) 00.07.01_35fd332b.jpg>)
 
